@@ -497,7 +497,6 @@ public class TileSpreader extends TileSimpleInventory implements IManaCollector,
 	}
 
 	public EntityManaBurst getBurst(boolean fake) {
-		EntityManaBurst burst = new EntityManaBurst(this, fake);
 
 		boolean dreamwood = isDreamwood();
 		boolean ultra = isULTRA_SPREADER();
@@ -513,8 +512,10 @@ public class TileSpreader extends TileSimpleInventory implements IManaCollector,
 		if(!lens.isEmpty() && lens.getItem() instanceof ILensEffect)
 			((ILensEffect) lens.getItem()).apply(lens, props);
 
-		burst.setSourceLens(lens);
 		if(getCurrentMana() >= props.maxMana || fake) {
+			EntityManaBurst burst = new EntityManaBurst(this, fake);
+			burst.setSourceLens(lens);
+
 			if(mapmakerOverride) {
 				burst.setColor(mmForcedColor);
 				burst.setMana(mmForcedManaPayload);
