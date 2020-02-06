@@ -18,7 +18,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiChat;
-import net.minecraft.client.gui.GuiIngame;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
@@ -35,7 +34,6 @@ import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
@@ -71,7 +69,6 @@ import vazkii.botania.common.item.equipment.bauble.ItemDodgeRing;
 import vazkii.botania.common.item.equipment.bauble.ItemFlightTiara;
 import vazkii.botania.common.item.equipment.bauble.ItemMonocle;
 import vazkii.botania.common.lib.LibMisc;
-import vazkii.botania.common.lib.LibObfuscation;
 
 import java.awt.Color;
 import java.util.List;
@@ -88,7 +85,7 @@ public final class HUDHandler {
 	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public static void onDrawScreenPre(RenderGameOverlayEvent.Pre event) {
 		Minecraft mc = Minecraft.getMinecraft();
-		Profiler profiler = mc.mcProfiler;
+		Profiler profiler = mc.profiler;
 
 		if(event.getType() == ElementType.HEALTH) {
 			profiler.startSection("botania-hud");
@@ -120,7 +117,7 @@ public final class HUDHandler {
 	@SubscribeEvent
 	public static void onDrawScreenPost(RenderGameOverlayEvent.Post event) {
 		Minecraft mc = Minecraft.getMinecraft();
-		Profiler profiler = mc.mcProfiler;
+		Profiler profiler = mc.profiler;
 		ItemStack main = mc.player.getHeldItemMainhand();
 		ItemStack offhand = mc.player.getHeldItemOffhand();
 
@@ -144,16 +141,17 @@ public final class HUDHandler {
 						}
 					} else if(block != null && PlayerHelper.hasHeldItemClass(mc.player, ILexicon.class))
 						drawLexiconHUD(PlayerHelper.getFirstHeldItemClass(mc.player, ILexicon.class), state, pos, event.getResolution());
-					if(tile != null && tile instanceof TilePool && !mc.player.getHeldItemMainhand().isEmpty())
+					if(tile instanceof TilePool && !mc.player.getHeldItemMainhand().isEmpty())
 						renderPoolRecipeHUD(event.getResolution(), (TilePool) tile, mc.player.getHeldItemMainhand());
 				}
-				if(tile != null && tile instanceof TileAltar)
-					((TileAltar) tile).renderHUD(mc, event.getResolution());
-				else if(tile != null && tile instanceof TileRuneAltar)
-					((TileRuneAltar) tile).renderHUD(mc, event.getResolution());
-
-				if(tile != null && tile instanceof TileCorporeaCrystalCube)
-					renderCrystalCubeHUD(event.getResolution(), (TileCorporeaCrystalCube) tile);
+				if(!PlayerHelper.hasHeldItemClass(mc.player, ILexicon.class)) {
+					if(tile instanceof TileAltar)
+						((TileAltar) tile).renderHUD(mc, event.getResolution());
+					else if(tile instanceof TileRuneAltar)
+						((TileRuneAltar) tile).renderHUD(mc, event.getResolution());
+					else if(tile instanceof TileCorporeaCrystalCube)
+						renderCrystalCubeHUD(event.getResolution(), (TileCorporeaCrystalCube) tile);
+				}
 			}
 
 			TileCorporeaIndex.getInputHandler();
@@ -265,7 +263,7 @@ public final class HUDHandler {
 
 	private static void renderWandModeDisplay(ItemStack stack, ScaledResolution res) {
 		Minecraft mc = Minecraft.getMinecraft();
-		Profiler profiler = mc.mcProfiler;
+		Profiler profiler = mc.profiler;
 
 		profiler.startSection("wandMode");
 		int ticks = mc.ingameGUI.remainingHighlightTicks;
@@ -317,7 +315,7 @@ public final class HUDHandler {
 
 	private static void renderPoolRecipeHUD(ScaledResolution res, TilePool tile, ItemStack stack) {
 		Minecraft mc = Minecraft.getMinecraft();
-		Profiler profiler = mc.mcProfiler;
+		Profiler profiler = mc.profiler;
 
 		profiler.startSection("poolRecipe");
 		RecipeManaInfusion recipe = TilePool.getMatchingRecipe(stack, tile.getWorld().getBlockState(tile.getPos().down()));
@@ -349,7 +347,7 @@ public final class HUDHandler {
 
 	private static void renderCrystalCubeHUD(ScaledResolution res, TileCorporeaCrystalCube tile) {
 		Minecraft mc = Minecraft.getMinecraft();
-		Profiler profiler = mc.mcProfiler;
+		Profiler profiler = mc.profiler;
 
 		profiler.startSection("crystalCube");
 		ItemStack target = tile.getRequestTarget();
@@ -359,11 +357,14 @@ public final class HUDHandler {
 			int strlen = Math.max(mc.fontRenderer.getStringWidth(s1), mc.fontRenderer.getStringWidth(s2));
 			int w = res.getScaledWidth();
 			int h = res.getScaledHeight();
-			Gui.drawRect(w / 2 + 8, h / 2 - 12, w / 2 + strlen + 32, h / 2 + 10, 0x44000000);
-			Gui.drawRect(w / 2 + 6, h / 2 - 14, w / 2 + strlen + 34, h / 2 + 12, 0x44000000);
+			int boxH = h / 2 + (tile.locked ? 20 : 10);
+			Gui.drawRect(w / 2 + 8, h / 2 - 12, w / 2 + strlen + 32, boxH, 0x44000000);
+			Gui.drawRect(w / 2 + 6, h / 2 - 14, w / 2 + strlen + 34, boxH + 2, 0x44000000);
 
 			mc.fontRenderer.drawStringWithShadow(target.getDisplayName(), w / 2 + 30, h / 2 - 10, 0x6666FF);
 			mc.fontRenderer.drawStringWithShadow(tile.getItemCount() + "x", w / 2 + 30, h / 2, 0xFFFFFF);
+			if(tile.locked)
+				mc.fontRenderer.drawStringWithShadow(I18n.format("botaniamisc.locked"), w / 2 + 30, h / 2 + 10, 0xFFAA00);
 			net.minecraft.client.renderer.RenderHelper.enableGUIStandardItemLighting();
 			GlStateManager.enableRescaleNormal();
 			mc.getRenderItem().renderItemAndEffectIntoGUI(target, w / 2 + 10, h / 2 - 10);
@@ -376,7 +377,7 @@ public final class HUDHandler {
 	private static void drawLexiconHUD(ItemStack stack, IBlockState state, RayTraceResult pos, ScaledResolution res) {
 		Minecraft mc = Minecraft.getMinecraft();
 		Block block = state.getBlock();
-		Profiler profiler = mc.mcProfiler;
+		Profiler profiler = mc.profiler;
 
 		profiler.startSection("lexicon");
 		FontRenderer font = mc.fontRenderer;
@@ -401,7 +402,7 @@ public final class HUDHandler {
 			}
 		}
 
-		if(!draw && pos.entityHit == null) {
+		if(!ConfigHandler.lexicaOfflineMode && !draw && pos.entityHit == null) {
 			profiler.startSection("wikiLookup");
 			if(!block.isAir(state, mc.world, pos.getBlockPos()) && !(block instanceof BlockLiquid)) {
 				IWikiProvider provider = WikiHooks.getWikiFor(block);

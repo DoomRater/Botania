@@ -154,10 +154,10 @@ public class BlockPool extends BlockMod implements IWandHUD, IWandable, ILexicon
 	}
 
 	@Override
-	public void onEntityCollidedWithBlock(World world, BlockPos pos, IBlockState state, Entity par5Entity) {
-		if(par5Entity instanceof EntityItem) {
+	public void onEntityCollision(World world, BlockPos pos, IBlockState state, Entity entity) {
+		if(entity instanceof EntityItem) {
 			TilePool tile = (TilePool) world.getTileEntity(pos);
-			if(tile.collideEntityItem((EntityItem) par5Entity))
+			if(tile.collideEntityItem((EntityItem) entity))
 				VanillaPacketDispatcher.dispatchTEToNearbyPlayers(world, pos);
 		}
 	}
@@ -212,6 +212,7 @@ public class BlockPool extends BlockMod implements IWandHUD, IWandable, ILexicon
 		return TilePool.calculateComparatorLevel(pool.getCurrentMana(), pool.manaCap);
 	}
 
+	@SideOnly(Side.CLIENT)
 	@Override
 	public void renderHUD(Minecraft mc, ScaledResolution res, World world, BlockPos pos) {
 		((TilePool) world.getTileEntity(pos)).renderHUD(mc, res);

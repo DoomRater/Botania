@@ -395,7 +395,7 @@ public class TilePool extends TileMod implements IManaPool, IKeyLocked, ISparkAt
 	@SideOnly(Side.CLIENT)
 	public void renderHUD(Minecraft mc, ScaledResolution res) {
 		ItemStack pool = new ItemStack(ModBlocks.pool, 1, world.getBlockState(getPos()).getValue(BotaniaStateProps.POOL_VARIANT).ordinal());
-		String name = I18n.format(pool.getUnlocalizedName().replaceAll("tile.", "tile." + LibResources.PREFIX_MOD) + ".name");
+		String name = I18n.format(pool.getTranslationKey().replaceAll("tile.", "tile." + LibResources.PREFIX_MOD) + ".name");
 		int color = 0x4444FF;
 		HUDHandler.drawSimpleManaHUD(color, knownMana, manaCap, name, res);
 
@@ -481,7 +481,12 @@ public class TilePool extends TileMod implements IManaPool, IKeyLocked, ISparkAt
 
 	@Override
 	public int getAvailableSpaceForMana() {
-		return Math.max(0, manaCap - getCurrentMana());
+		int space = Math.max(0, manaCap - getCurrentMana());
+		if(space > 0)
+			return space;
+		else if(world.getBlockState(pos.down()).getBlock() == ModBlocks.manaVoid)
+			return manaCap;
+		else return 0;
 	}
 
 	@Override

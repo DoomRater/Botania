@@ -37,6 +37,7 @@ import vazkii.botania.common.crafting.ModPetalRecipes;
 import vazkii.botania.common.crafting.ModRuneRecipes;
 import vazkii.botania.common.item.ModItems;
 import vazkii.botania.common.item.block.ItemBlockSpecialFlower;
+import vazkii.botania.common.item.equipment.bauble.ItemBaubleCosmetic;
 import vazkii.botania.common.lexicon.page.PageBrew;
 import vazkii.botania.common.lexicon.page.PageCraftingRecipe;
 import vazkii.botania.common.lexicon.page.PageElvenRecipe;
@@ -1117,7 +1118,7 @@ public final class LexiconData {
 				new PageCraftingRecipe("3", ModCraftingRecipes.recipeBlackHoleTalisman));
 
 		corporeaCrystalCube = new AlfheimLexiconEntry(LibLexicon.ENDER_CORPOREA_CRYSTAL_CUBE, categoryEnder);
-		corporeaCrystalCube.setLexiconPages(new PageText("0"), new PageText("1"), new PageText("3"),
+		corporeaCrystalCube.setLexiconPages(new PageText("0"), new PageText("1"), new PageText("3"), new PageText("4"),
 				new PageCraftingRecipe("2", ModCraftingRecipes.recipeCorporeaCrystalCube));
 
 		luminizerTransport = new AlfheimLexiconEntry(LibLexicon.ENDER_LUMINIZER_TRANSPORT, categoryEnder);
@@ -1149,7 +1150,7 @@ public final class LexiconData {
 			List<LexiconPage> pages = new ArrayList<>();
 			pages.add(new PageText("0"));
 			pages.add(new PageText("1"));
-			for (int i = 0; i < 32; i++)
+			for (int i = 0; i < ItemBaubleCosmetic.SUBTYPES; i++)
 				pages.add(new PageCraftingRecipe("" + (i + 2), ModCraftingRecipes.recipesCosmeticItems.get(i)));
 			cosmeticBaubles.setPriority().setLexiconPages(pages.toArray(new LexiconPage[pages.size()]));
 		}
@@ -1415,7 +1416,7 @@ public final class LexiconData {
 		banners.setLexiconPages(new PageText("0"), new PageImage("1", LibResources.ENTRY_BANNERS))
 				.setIcon(new ItemStack(ModItems.lexicon));
 
-		if (Botania.bcTriggersLoaded) {
+		if (Botania.bcApiLoaded) {
 			bcIntegration = new CompatLexiconEntry(LibLexicon.MISC_BC_INTEGRATION, categoryMisc, "BuildCraft");
 			bcIntegration.setLexiconPages(new PageText("0")).setIcon(new ItemStack(Items.REDSTONE));
 		}

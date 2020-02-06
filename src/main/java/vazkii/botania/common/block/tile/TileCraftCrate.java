@@ -24,6 +24,7 @@ import vazkii.botania.api.internal.VanillaPacketDispatcher;
 import vazkii.botania.common.item.ModItems;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 public class TileCraftCrate extends TileOpenCrate {
 
@@ -128,26 +129,27 @@ public class TileCraftCrate extends TileOpenCrate {
 				return false;
 			}
 		}, 3, 3);
-		for(int i = 0; i < 9; i++) {
+		for(int i = 0; i < craft.getSizeInventory(); i++) {
 			ItemStack stack = itemHandler.getStackInSlot(i);
 
 			if(stack.isEmpty() || isLocked(i) || stack.getItem() == ModItems.manaResource && stack.getItemDamage() == 11)
 				continue;
 
-			craft.setInventorySlotContents(i, stack.copy());
+			craft.setInventorySlotContents(i, stack);
 		}
 
 		for(IRecipe recipe : ForgeRegistries.RECIPES)
 			if(recipe.matches(craft, world)) {
 				itemHandler.setStackInSlot(9, recipe.getCraftingResult(craft));
 
-				for(int i = 0; i < 9; i++) {
-					ItemStack stack = itemHandler.getStackInSlot(i);
-					if(stack.isEmpty())
+				List<ItemStack> remainders = recipe.getRemainingItems(craft);
+				for(int i = 0; i < craft.getSizeInventory(); i++) {
+					ItemStack s = remainders.get(i);
+					if(!itemHandler.getStackInSlot(i).isEmpty()
+						&& itemHandler.getStackInSlot(i).getItem() == ModItems.manaResource
+						&& itemHandler.getStackInSlot(i).getItemDamage() == 11)
 						continue;
-
-					ItemStack container = stack.getItem().getContainerItem(stack);
-					itemHandler.setStackInSlot(i, container);
+					itemHandler.setStackInSlot(i, s);
 				}
 				return true;
 			}

@@ -68,8 +68,8 @@ public class ItemGrassHorn extends ItemMod {
 
 	@Nonnull
 	@Override
-	public String getUnlocalizedName(ItemStack par1ItemStack) {
-		return super.getUnlocalizedName(par1ItemStack) + par1ItemStack.getItemDamage();
+	public String getTranslationKey(ItemStack stack) {
+		return super.getTranslationKey(stack) + stack.getItemDamage();
 	}
 
 	@SideOnly(Side.CLIENT)
@@ -107,7 +107,6 @@ public class ItemGrassHorn extends ItemMod {
 
 	public static void breakGrass(World world, ItemStack stack, int stackDmg, BlockPos srcPos) {
 		EnumHornType type = EnumHornType.getTypeForMeta(stackDmg);
-		Random rand = new Random(srcPos.hashCode());
 		int range = 12 - stackDmg * 3;
 		int rangeY = 3 + stackDmg * 4;
 		List<BlockPos> coords = new ArrayList<>();
@@ -122,25 +121,21 @@ public class ItemGrassHorn extends ItemMod {
 				coords.add(pos);
 		}
 
-		Collections.shuffle(coords, rand);
+		Collections.shuffle(coords, world.rand);
 
 		int count = Math.min(coords.size(), 32 + stackDmg * 16);
 		for(int i = 0; i < count; i++) {
 			BlockPos currCoords = coords.get(i);
 			IBlockState state = world.getBlockState(currCoords);
 			Block block = state.getBlock();
-			NonNullList<ItemStack> items = NonNullList.create();
-			block.getDrops(items, world, currCoords, state, 0);
 
 			if(block instanceof IHornHarvestable && ((IHornHarvestable) block).hasSpecialHornHarvest(world, currCoords, stack, type))
 				((IHornHarvestable) block).harvestByHorn(world, currCoords, stack, type);
 			else {
+				block.dropBlockAsItem(world, currCoords, state, 0);
 				world.setBlockToAir(currCoords);
 				if(ConfigHandler.blockBreakParticles)
 					world.playEvent(2001, currCoords, Block.getStateId(state));
-
-				for(ItemStack stack_ : items)
-					world.spawnEntity(new EntityItem(world, currCoords.getX() + 0.5, currCoords.getY() + 0.5, currCoords.getZ() + 0.5, stack_));
 			}
 		}
 	}

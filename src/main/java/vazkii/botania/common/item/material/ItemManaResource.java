@@ -24,6 +24,7 @@ import net.minecraft.util.NonNullList;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldProviderEnd;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -58,7 +59,7 @@ public class ItemManaResource extends ItemMod implements IFlowerComponent, IElve
 	public void onPlayerInteract(PlayerInteractEvent.RightClickBlock event) {
 		ItemStack stack = event.getItemStack();
 		boolean correctStack = !stack.isEmpty() && stack.getItem() == Items.GLASS_BOTTLE;
-		boolean ender = event.getWorld().provider.getDimension() == 1;
+		boolean ender = event.getWorld().provider instanceof WorldProviderEnd;
 
 		if(correctStack && ender) {
 			if (event.getWorld().isRemote) {
@@ -131,14 +132,8 @@ public class ItemManaResource extends ItemMod implements IFlowerComponent, IElve
 
 	@Nonnull
 	@Override
-	public String getUnlocalizedName(ItemStack par1ItemStack) {
-		return "item." + LibItemNames.MANA_RESOURCE_NAMES[Math.min(types - 1, par1ItemStack.getItemDamage())];
-	}
-
-	@Override
-	public boolean canFit(ItemStack stack, IPetalApothecary apothecary) {
-		int meta = stack.getItemDamage();
-		return meta == 6 || meta == 8 || meta == 5 || meta == 23;
+	public String getTranslationKey(ItemStack stack) {
+		return "item." + LibItemNames.MANA_RESOURCE_NAMES[Math.min(types - 1, stack.getItemDamage())];
 	}
 
 	@Override

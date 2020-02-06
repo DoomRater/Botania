@@ -54,6 +54,8 @@ import vazkii.botania.common.core.helper.PlayerHelper;
 import vazkii.botania.common.core.helper.Vector3;
 import vazkii.botania.common.lib.LibItemNames;
 import vazkii.botania.common.lib.LibMisc;
+import vazkii.botania.common.network.PacketBotaniaEffect;
+import vazkii.botania.common.network.PacketHandler;
 
 import javax.annotation.Nonnull;
 import java.awt.Color;
@@ -140,8 +142,6 @@ public class ItemTwigWand extends Item16Colors implements ICoordBoundItem {
 
 				return EnumActionResult.SUCCESS;
 			}
-
-			return EnumActionResult.PASS;
 		}
 
 		if(block instanceof IWandable) {
@@ -169,7 +169,7 @@ public class ItemTwigWand extends Item16Colors implements ICoordBoundItem {
 			return wanded ? EnumActionResult.SUCCESS : EnumActionResult.FAIL;
 		}
 
-		if(((BlockPistonRelay) ModBlocks.pistonRelay).playerPositions.containsKey(player.getUniqueID()) && !world.isRemote) {
+		if(!world.isRemote && ((BlockPistonRelay) ModBlocks.pistonRelay).playerPositions.containsKey(player.getUniqueID())) {
 			BlockPistonRelay.DimWithPos bindPos = ((BlockPistonRelay) ModBlocks.pistonRelay).playerPositions.get(player.getUniqueID());
 			BlockPistonRelay.DimWithPos currentPos = new BlockPistonRelay.DimWithPos(world.provider.getDimension(), pos);
 
@@ -177,6 +177,10 @@ public class ItemTwigWand extends Item16Colors implements ICoordBoundItem {
 			((BlockPistonRelay) ModBlocks.pistonRelay).mappedPositions.put(bindPos, currentPos);
 			BlockPistonRelay.WorldData.get(world).markDirty();
 
+			PacketHandler.sendToNearby(world, pos,
+					new PacketBotaniaEffect(PacketBotaniaEffect.EffectType.PARTICLE_BEAM,
+							bindPos.blockPos.getX() + 0.5, bindPos.blockPos.getY() + 0.5, bindPos.blockPos.getZ() + 0.5,
+							pos.getX(), pos.getY(), pos.getZ()));
 			world.playSound(null, player.posX, player.posY, player.posZ, ModSounds.ding, SoundCategory.PLAYERS, 1F, 1F);
 			return EnumActionResult.SUCCESS;
 		}
@@ -240,8 +244,8 @@ public class ItemTwigWand extends Item16Colors implements ICoordBoundItem {
 
 	@Nonnull
 	@Override
-	public String getUnlocalizedName(ItemStack par1ItemStack) {
-		return getUnlocalizedNameLazy(par1ItemStack);
+	public String getTranslationKey(ItemStack stack) {
+		return getUnlocalizedNameLazy(stack);
 	}
 
 	@SideOnly(Side.CLIENT)

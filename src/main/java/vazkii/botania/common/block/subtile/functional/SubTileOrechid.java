@@ -10,7 +10,9 @@
  */
 package vazkii.botania.common.block.subtile.functional;
 
+import com.google.common.base.Predicate;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockStone;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.block.state.pattern.BlockStateMatcher;
 import net.minecraft.init.Blocks;
@@ -82,17 +84,7 @@ public class SubTileOrechid extends SubTileFunctional {
 
 		for(ItemStack stack : ores) {
 			Item item = stack.getItem();
-			String clname = item.getClass().getName();
-
-			// This poem is dedicated to Greg
-			//
-			// Greg.
-			// I get what you do when
-			// others say it's a grind.
-			// But take your TE ores
-			// and stick them in your behind.
-			if(clname.startsWith("gregtech") || clname.startsWith("gregapi"))
-				continue;
+			
 			if(!(item instanceof ItemBlock))
 				continue;
 
@@ -105,10 +97,9 @@ public class SubTileOrechid extends SubTileFunctional {
 	private BlockPos getCoordsToPut() {
 		List<BlockPos> possibleCoords = new ArrayList<>();
 
-		Block source = getSourceBlock();
 		for(BlockPos pos : BlockPos.getAllInBox(getPos().add(-RANGE, -RANGE_Y, -RANGE), getPos().add(RANGE, RANGE_Y, RANGE))) {
 			IBlockState state = supertile.getWorld().getBlockState(pos);
-			if(state.getBlock().isReplaceableOreGen(state, supertile.getWorld(), pos, BlockStateMatcher.forBlock(source)))
+			if(state.getBlock().isReplaceableOreGen(state, supertile.getWorld(), pos, getReplaceMatcher()))
 				possibleCoords.add(pos);
 		}
 
@@ -125,8 +116,8 @@ public class SubTileOrechid extends SubTileFunctional {
 		return BotaniaAPI.oreWeights;
 	}
 
-	public Block getSourceBlock() {
-		return Blocks.STONE;
+	public Predicate<IBlockState> getReplaceMatcher() {
+		return state -> state.getBlock() == Blocks.STONE && state.getValue(BlockStone.VARIANT) == BlockStone.EnumType.STONE;
 	}
 
 	public int getCost() {

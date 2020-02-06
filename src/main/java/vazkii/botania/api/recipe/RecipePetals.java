@@ -14,6 +14,7 @@ import com.google.common.collect.ImmutableList;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.oredict.OreDictionary;
+import vazkii.botania.common.core.helper.ItemNBTHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,14 +50,9 @@ public class RecipePetals {
 			for(int j = 0; j < inputsMissing.size(); j++) {
 				Object input = inputsMissing.get(j);
 				if(input instanceof String) {
-					List<ItemStack> validStacks = OreDictionary.getOres((String) input);
 					boolean found = false;
-					for(ItemStack ostack : validStacks) {
-						ItemStack cstack = ostack.copy();
-						if(cstack.getItemDamage() == Short.MAX_VALUE)
-							cstack.setItemDamage(stack.getItemDamage());
-
-						if(stack.isItemEqual(cstack)) {
+					for(ItemStack ostack : OreDictionary.getOres((String) input, false)) {
+						if(OreDictionary.itemMatches(ostack, stack, false)) {
 							oredictIndex = j;
 							found = true;
 							break;
@@ -66,7 +62,7 @@ public class RecipePetals {
 
 					if(found)
 						break;
-				} else if(input instanceof ItemStack && simpleAreStacksEqual((ItemStack) input, stack)) {
+				} else if(input instanceof ItemStack && compareStacks((ItemStack) input, stack)) {
 					stackIndex = j;
 					break;
 				}
@@ -82,8 +78,8 @@ public class RecipePetals {
 		return inputsMissing.isEmpty();
 	}
 
-	private boolean simpleAreStacksEqual(ItemStack stack, ItemStack stack2) {
-		return stack.getItem() == stack2.getItem() && stack.getItemDamage() == stack2.getItemDamage();
+	private boolean compareStacks(ItemStack recipe, ItemStack supplied) {
+		return recipe.getItem() == supplied.getItem() && recipe.getItemDamage() == supplied.getItemDamage() && ItemNBTHelper.matchTag(recipe.getTagCompound(), supplied.getTagCompound());
 	}
 
 	public List<Object> getInputs() {

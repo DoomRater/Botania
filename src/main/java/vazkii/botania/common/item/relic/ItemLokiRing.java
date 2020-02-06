@@ -10,15 +10,17 @@
  */
 package vazkii.botania.common.item.relic;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.google.common.collect.ImmutableList;
+
 import baubles.api.BaubleType;
 import baubles.api.BaublesApi;
-import com.google.common.collect.ImmutableList;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Enchantments;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -27,8 +29,6 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.world.World;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -45,10 +45,6 @@ import vazkii.botania.common.item.ModItems;
 import vazkii.botania.common.item.equipment.tool.ToolCommons;
 import vazkii.botania.common.lib.LibItemNames;
 import vazkii.botania.common.lib.LibMisc;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 @Mod.EventBusSubscriber(modid = LibMisc.MOD_ID)
 public class ItemLokiRing extends ItemRelicBauble implements IWireframeCoordinateListProvider, IManaUsingItem {
@@ -145,16 +141,14 @@ public class ItemLokiRing extends ItemRelicBauble implements IWireframeCoordinat
 
 		List<BlockPos> cursors = getCursorList(lokiRing);
 		ISequentialBreaker breaker = (ISequentialBreaker) item;
-		World world = player.world;
-		boolean silk = EnchantmentHelper.getEnchantmentLevel(Enchantments.SILK_TOUCH, stack) > 0;
-		int fortune = EnchantmentHelper.getEnchantmentLevel(Enchantments.FORTUNE, stack);
 		boolean dispose = breaker.disposeOfTrashBlocks(stack);
 
 		for (BlockPos offset : cursors) {
 			BlockPos coords = pos.add(offset);
-			IBlockState state = world.getBlockState(coords);
+			IBlockState state = player.world.getBlockState(coords);
 			breaker.breakOtherBlock(player, stack, coords, pos, side);
-			ToolCommons.removeBlockWithDrops(player, stack, player.world, coords, pos, state.getBlock(), Collections.singletonList(state.getMaterial()), silk, fortune, dispose);
+			ToolCommons.removeBlockWithDrops(player, stack, player.world, coords,
+					s -> s.getBlock() == state.getBlock() && s.getMaterial() == state.getMaterial(), dispose);
 		}
 	}
 
@@ -201,14 +195,13 @@ public class ItemLokiRing extends ItemRelicBauble implements IWireframeCoordinat
 
 	private static ItemStack getLokiRing(EntityPlayer player) {
 		IItemHandler baubles = BaublesApi.getBaublesHandler(player);
-		ItemStack stack1 = baubles.getStackInSlot(1);
-		ItemStack stack2 = baubles.getStackInSlot(2);
-		return isLokiRing(stack1) ? stack1 : isLokiRing(stack2) ? stack2 : ItemStack.EMPTY;
+		int slot = BaublesApi.isBaubleEquipped(player, ModItems.lokiRing);
+		if (slot < 0) {
+			return ItemStack.EMPTY;
+		}
+		return baubles.getStackInSlot(slot);
 	}
 
-	private static boolean isLokiRing(ItemStack stack) {
-		return !stack.isEmpty() && stack.getItem() == ModItems.lokiRing;
-	}
 
 	private static BlockPos getOriginPos(ItemStack stack) {
 		int x = ItemNBTHelper.getInt(stack, TAG_X_ORIGIN, 0);

@@ -29,7 +29,6 @@ import net.minecraft.item.Item;
 import net.minecraft.item.Item.ToolMaterial;
 import net.minecraft.item.ItemArmor.ArmorMaterial;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.util.EnumHelper;
 import net.minecraftforge.fml.common.Loader;
@@ -56,8 +55,8 @@ import vazkii.botania.api.wiki.SimpleWikiProvider;
 import vazkii.botania.api.wiki.WikiHooks;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -97,8 +96,9 @@ public final class BotaniaAPI {
 	public static final Map<Block, PropertyEnum<EnumDyeColor>> paintableBlocks = new LinkedHashMap<>();
 	public static final Set<String> magnetBlacklist = new LinkedHashSet<>();
 	public static final Set<Class<? extends Entity>> gravityRodBlacklist = new LinkedHashSet<>();
-
-
+	
+	public static final Set<Block> gaiaBreakBlacklist = new HashSet<>();
+	
 	public static final ArmorMaterial manasteelArmorMaterial = EnumHelper.addArmorMaterial("MANASTEEL", "manasteel", 16,
 			new int[] { 2, 5, 6, 2 }, 18, SoundEvents.ITEM_ARMOR_EQUIP_IRON, 0);
 	public static final ToolMaterial manasteelToolMaterial = EnumHelper.addToolMaterial("MANASTEEL", 3, 300, 6.2F, 2F, 20);
@@ -214,33 +214,19 @@ public final class BotaniaAPI {
 		addOreWeightNether("oreOnyx", 500); // SimpleOres 2
 		addOreWeightNether("oreHaditeCoal", 500); // Hadite
 
-		registerModWiki("Minecraft", new SimpleWikiProvider("Minecraft Wiki", "http://minecraft.gamepedia.com/%s"));
+		registerModWiki("minecraft", new SimpleWikiProvider("Minecraft Wiki", "https://minecraft.gamepedia.com/%s"));
 
 		IWikiProvider technicWiki = new SimpleWikiProvider("Technic Wiki", "http://wiki.technicpack.net/%s");
 		IWikiProvider mekanismWiki = new SimpleWikiProvider("Mekanism Wiki", "http://wiki.aidancbrady.com/wiki/%s");
-		IWikiProvider buildcraftWiki = new SimpleWikiProvider("BuildCraft Wiki", "http://www.mod-buildcraft.com/wiki/doku.php?id=%s");
 
-		registerModWiki("Mekanism", mekanismWiki);
-		registerModWiki("MekanismGenerators", mekanismWiki);
-		registerModWiki("MekanismTools", mekanismWiki);
-		registerModWiki("EnderIO", new SimpleWikiProvider("EnderIO Wiki", "http://wiki.enderio.com/%s"));
-		registerModWiki("TropiCraft", new SimpleWikiProvider("Tropicraft Wiki", "http://wiki.tropicraft.net/wiki/%s"));
-		registerModWiki("RandomThings", new SimpleWikiProvider("Random Things Wiki", "http://randomthingsminecraftmod.wikispaces.com/%s"));
-		registerModWiki("Witchery", new SimpleWikiProvider("Witchery Wiki", "https://sites.google.com/site/witcherymod/%s", "-", true));
-		registerModWiki("AppliedEnergistics2", new SimpleWikiProvider("AE2 Wiki", "http://ae-mod.info/%s"));
-		registerModWiki("BigReactors", technicWiki);
-		registerModWiki("BuildCraft|Core", buildcraftWiki);
-		registerModWiki("BuildCraft|Builders", buildcraftWiki);
-		registerModWiki("BuildCraft|Energy", buildcraftWiki);
-		registerModWiki("BuildCraft|Factory", buildcraftWiki);
-		registerModWiki("BuildCraft|Silicon", buildcraftWiki);
-		registerModWiki("BuildCraft|Transport", buildcraftWiki);
-		registerModWiki("ArsMagica2", new SimpleWikiProvider("ArsMagica2 Wiki", "http://wiki.arsmagicamod.com/wiki/%s"));
-		registerModWiki("PneumaticCraft", new SimpleWikiProvider("PneumaticCraft Wiki", "http://www.minemaarten.com/wikis/pneumaticcraft-wiki/pneumaticcraft-wiki-%s"));
-		registerModWiki("StevesCarts2", new SimpleWikiProvider("Steve's Carts Wiki", "http://stevescarts2.wikispaces.com/%s"));
-		registerModWiki("GanysSurface", new SimpleWikiProvider("Gany's Surface Wiki", "http://ganys-surface.wikia.com/wiki/%s"));
-		registerModWiki("GanysNether", new SimpleWikiProvider("Gany's Nether Wiki", "http://ganys-nether.wikia.com/wiki/%s"));
-		registerModWiki("GanysEnd", new SimpleWikiProvider("Gany's End Wiki", "http://ganys-end.wikia.com/wiki/%s"));
+		registerModWiki("mekanism", mekanismWiki);
+		registerModWiki("mekanismgenerators", mekanismWiki);
+		registerModWiki("mekanismtools", mekanismWiki);
+		registerModWiki("enderio", new SimpleWikiProvider("EnderIO Wiki", "http://wiki.enderio.com/%s"));
+		registerModWiki("tropicraft", new SimpleWikiProvider("Tropicraft Wiki", "http://wiki.tropicraft.net/wiki/%s"));
+		registerModWiki("randomthings", new SimpleWikiProvider("Random Things Wiki", "https://lumien.net/rtwiki/blocks/%s/", "-", true));
+		registerModWiki("appliedenergistics2", new SimpleWikiProvider("AE2 Wiki", "http://ae-mod.info/%s"));
+		registerModWiki("bigreactors", technicWiki);
 
 		registerPaintableBlock(Blocks.STAINED_GLASS, BlockStainedGlass.COLOR);
 		registerPaintableBlock(Blocks.STAINED_GLASS_PANE, BlockStainedGlassPane.COLOR);
@@ -257,6 +243,8 @@ public final class BotaniaAPI {
 		registerSemiDisposableBlock("stoneBasalt"); // Vanilla
 		registerSemiDisposableBlock("stoneDiorite"); // Vanilla
 		registerSemiDisposableBlock("stoneGranite"); // Vanilla
+		
+		blacklistBlockFromGaiaGuardian(Blocks.BEACON);
 	}
 
 	/**
@@ -363,7 +351,7 @@ public final class BotaniaAPI {
 			return false;
 
 		if(stack.getItemDamage() != Short.MAX_VALUE) {
-			ItemStack copy = new ItemStack(stack.getItem(), 0, Short.MAX_VALUE);
+			ItemStack copy = new ItemStack(stack.getItem(), 1, Short.MAX_VALUE);
 			boolean general = isItemBlacklistedFromMagnet(copy, recursion + 1);
 			if(general)
 				return true;
@@ -674,11 +662,14 @@ public final class BotaniaAPI {
 		if(stack.isEmpty())
 			return "";
 
-		return "i_" + stack.getItem().getUnlocalizedName() + "@" + stack.getItemDamage();
+		return "i_" + stack.getItem().getTranslationKey() + "@" + stack.getItemDamage();
 	}
 
 	private static String getMagnetKey(Block block, int meta) {
-		return "bm_" + block.getUnlocalizedName() + "@" + meta;
+		return "bm_" + block.getTranslationKey() + "@" + meta;
 	}
 
+	public static void blacklistBlockFromGaiaGuardian(Block block) {
+		gaiaBreakBlacklist.add(block);
+	}
 }

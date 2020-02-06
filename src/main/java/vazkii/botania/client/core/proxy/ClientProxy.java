@@ -18,6 +18,7 @@ import net.minecraft.client.renderer.entity.RenderSnowball;
 import net.minecraft.client.renderer.tileentity.TileEntityItemStackRenderer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexFormat;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -26,14 +27,17 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 import net.minecraftforge.client.model.animation.AnimationTESR;
+import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.client.registry.RenderingRegistry;
 import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.relauncher.Side;
+import org.lwjgl.input.Keyboard;
 import vazkii.botania.api.boss.IBotaniaBoss;
 import vazkii.botania.api.lexicon.LexiconEntry;
 import vazkii.botania.api.lexicon.multiblock.IMultiblockRenderHook;
@@ -60,6 +64,7 @@ import vazkii.botania.client.fx.FXWisp;
 import vazkii.botania.client.gui.lexicon.GuiLexicon;
 import vazkii.botania.client.gui.lexicon.GuiLexiconEntry;
 import vazkii.botania.client.gui.lexicon.GuiLexiconIndex;
+import vazkii.botania.client.integration.albedo.AlbedoCompat;
 import vazkii.botania.client.render.entity.LayerGaiaHead;
 import vazkii.botania.client.render.entity.RenderBabylonWeapon;
 import vazkii.botania.client.render.entity.RenderCorporeaSpark;
@@ -102,6 +107,7 @@ import vazkii.botania.common.item.ItemSextant.MultiblockSextant;
 import vazkii.botania.common.item.ModItems;
 import vazkii.botania.common.item.equipment.bauble.ItemMonocle;
 import vazkii.botania.common.lexicon.LexiconData;
+import vazkii.botania.common.lib.LibMisc;
 
 import java.awt.Desktop;
 import java.io.File;
@@ -132,9 +138,11 @@ public class ClientProxy implements IProxy {
 		EMPTY_MODEL.setVisible(false);
 	}
 
+	public static final KeyBinding CORPOREA_REQUEST = new KeyBinding("nei.options.keys.gui.botania_corporea_request", KeyConflictContext.GUI, Keyboard.KEY_C, LibMisc.MOD_NAME);
+
 	@Override
 	public void preInit(FMLPreInitializationEvent event) {
-		PersistentVariableHelper.setCacheFile(new File(Minecraft.getMinecraft().mcDataDir, "BotaniaVars.dat"));
+		PersistentVariableHelper.setCacheFile(new File(Minecraft.getMinecraft().gameDir, "BotaniaVars.dat"));
 		try {
 			PersistentVariableHelper.load();
 			PersistentVariableHelper.save();
@@ -169,7 +177,13 @@ public class ClientProxy implements IProxy {
 				dootDoot = true;
 		}
 
+		if (Loader.isModLoaded("albedo") && ConfigHandler.enableAlbedo) {
+			MinecraftForge.EVENT_BUS.register(AlbedoCompat.class);
+		}
+
 		TileEntityItemStackRenderer.instance = new RenderTilePylon.ForwardingTEISR(TileEntityItemStackRenderer.instance);
+
+		ClientRegistry.registerKeyBinding(ClientProxy.CORPOREA_REQUEST);
 	}
 
 	@Override
@@ -274,6 +288,8 @@ public class ClientProxy implements IProxy {
 
 	@Override
 	public boolean openWikiPage(World world, Block block, RayTraceResult pos) {
+		if(ConfigHandler.lexicaOfflineMode) 
+			return false;
 		IWikiProvider wiki = WikiHooks.getWikiFor(block);
 		String url = wiki.getWikiURL(world, pos, Minecraft.getMinecraft().player);
 		if(url != null && !url.isEmpty()) {

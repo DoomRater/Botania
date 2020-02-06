@@ -12,6 +12,7 @@ package vazkii.botania.common.item.equipment.bauble;
 
 import baubles.api.BaublesApi;
 import baubles.api.IBauble;
+import baubles.api.cap.BaublesCapabilities;
 import baubles.api.cap.IBaublesItemHandler;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
@@ -29,13 +30,11 @@ import net.minecraft.util.SoundCategory;
 import net.minecraft.world.World;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.Optional;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
-import thaumcraft.api.items.IRunicArmor;
 import vazkii.botania.api.item.ICosmeticAttachable;
 import vazkii.botania.api.item.IPhantomInkable;
 import vazkii.botania.common.core.handler.ModSounds;
@@ -49,9 +48,8 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.UUID;
 
-@Optional.Interface(modid = "thaumcraft", iface = "thaumcraft.api.items.IRunicArmor")
 @Mod.EventBusSubscriber(modid = LibMisc.MOD_ID)
-public abstract class ItemBauble extends ItemMod implements IBauble, ICosmeticAttachable, IPhantomInkable, IRunicArmor {
+public abstract class ItemBauble extends ItemMod implements IBauble, ICosmeticAttachable, IPhantomInkable {
 
 	private static final String TAG_HASHCODE = "playerHashcode";
 	private static final String TAG_BAUBLE_UUID_MOST = "baubleUUIDMost";
@@ -77,7 +75,7 @@ public abstract class ItemBauble extends ItemMod implements IBauble, ICosmeticAt
 			IItemHandler inv = BaublesApi.getBaublesHandler((EntityPlayer) evt.getEntityLiving());
 			for(int i = 0; i < inv.getSlots(); i++) {
 				ItemStack stack = inv.getStackInSlot(i);
-				if (!stack.isEmpty() && stack.getItem().getRegistryName().getResourceDomain().equals(LibMisc.MOD_ID)) {
+				if (!stack.isEmpty() && stack.getItem().getRegistryName().getNamespace().equals(LibMisc.MOD_ID)) {
 					((ItemBauble) stack.getItem()).onUnequipped(stack, evt.getEntityLiving());
 				}
 			}
@@ -102,7 +100,12 @@ public abstract class ItemBauble extends ItemMod implements IBauble, ICosmeticAt
 			for(int i = 0; i < baubles.getSlots(); i++) {
 				if(baubles.isItemValidForSlot(i, toEquip, player)) {
 					ItemStack stackInSlot = baubles.getStackInSlot(i);
-					if(stackInSlot.isEmpty() || ((IBauble) stackInSlot.getItem()).canUnequip(stackInSlot, player)) {
+					IBauble baubleInSlot = stackInSlot.getCapability(BaublesCapabilities.CAPABILITY_ITEM_BAUBLE, null);
+					if(stackInSlot.isEmpty() || baubleInSlot == null || baubleInSlot.canUnequip(stackInSlot, player)) {
+						// If toEquip and stackInSlot are stacks with equal value but not identity, ItemStackHandler.setStackInSlot actually does nothing >.>
+						// Prevent it from trying to be overly smart by going through empty first
+						baubles.setStackInSlot(i, ItemStack.EMPTY);
+
 						baubles.setStackInSlot(i, toEquip);
 						((IBauble) toEquip.getItem()).onEquipped(toEquip, player);
 
@@ -111,7 +114,9 @@ public abstract class ItemBauble extends ItemMod implements IBauble, ICosmeticAt
 						PlayerHelper.grantCriterion((EntityPlayerMP) player, new ResourceLocation(LibMisc.MOD_ID, "main/bauble_wear"), "code_triggered");
 
 						if(!stackInSlot.isEmpty()) {
-							((IBauble) stackInSlot.getItem()).onUnequipped(stackInSlot, player);
+							if(baubleInSlot != null) {
+								baubleInSlot.onUnequipped(stackInSlot, player);
+							}
 
 							if(stack.isEmpty()) {
 								return ActionResult.newResult(EnumActionResult.SUCCESS, stackInSlot);
@@ -248,11 +253,5 @@ public abstract class ItemBauble extends ItemMod implements IBauble, ICosmeticAt
 	@Override
 	public void setPhantomInk(ItemStack stack, boolean ink) {
 		ItemNBTHelper.setBoolean(stack, TAG_PHANTOM_INK, ink);
-	}
-
-	@Override
-	@Optional.Method(modid = "Thaumcraft")
-	public int getRunicCharge(ItemStack itemstack) {
-		return 0;
 	}
 }

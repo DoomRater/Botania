@@ -14,17 +14,22 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import vazkii.botania.api.lexicon.LexiconEntry;
 import vazkii.botania.api.subtile.RadiusDescriptor;
 import vazkii.botania.api.subtile.SubTileFunctional;
 import vazkii.botania.common.Botania;
 import vazkii.botania.common.lexicon.LexiconData;
+import vazkii.botania.common.network.PacketHandler;
+import vazkii.botania.common.network.PacketItemAge;
 
 import java.util.List;
 
@@ -41,7 +46,7 @@ public class SubTileDaffomill extends SubTileFunctional {
 		super.onUpdate();
 
 		if(supertile.getWorld().rand.nextInt(4) == 0)
-			Botania.proxy.wispFX(supertile.getPos().getX() + Math.random(), supertile.getPos().getY() + Math.random(), supertile.getPos().getZ() + Math.random(), 0.05F, 0.05F, 0.05F, 0.25F + (float) Math.random() * 0.15F, orientation.getFrontOffsetX() * 0.1F, orientation.getFrontOffsetY() * 0.1F, orientation.getFrontOffsetZ() * 0.1F);
+			Botania.proxy.wispFX(supertile.getPos().getX() + Math.random(), supertile.getPos().getY() + Math.random(), supertile.getPos().getZ() + Math.random(), 0.05F, 0.05F, 0.05F, 0.25F + (float) Math.random() * 0.15F, orientation.getXOffset() * 0.1F, orientation.getYOffset() * 0.1F, orientation.getZOffset() * 0.1F);
 
 		if(windTicks == 0 && mana > 0) {
 			windTicks = 20;
@@ -56,9 +61,9 @@ public class SubTileDaffomill extends SubTileFunctional {
 				int slowdown = getSlowdownFactor();
 				for(EntityItem item : items) {
 					if(!item.isDead && item.age >= slowdown) {
-						item.motionX += orientation.getFrontOffsetX() * 0.05;
-						item.motionY += orientation.getFrontOffsetY() * 0.05;
-						item.motionZ += orientation.getFrontOffsetZ() * 0.05;
+						item.motionX += orientation.getXOffset() * 0.05;
+						item.motionY += orientation.getYOffset() * 0.05;
+						item.motionZ += orientation.getZOffset() * 0.05;
 					}
 				}
 			}
@@ -154,8 +159,17 @@ public class SubTileDaffomill extends SubTileFunctional {
 	public void readFromPacketNBT(NBTTagCompound cmp) {
 		super.readFromPacketNBT(cmp);
 
-		orientation = EnumFacing.getFront(cmp.getInteger(TAG_ORIENTATION) + 2); // retain compat with 1.7 saves
+		orientation = EnumFacing.byIndex(cmp.getInteger(TAG_ORIENTATION) + 2); // retain compat with 1.7 saves
 		windTicks = cmp.getInteger(TAG_WIND_TICKS);
 	}
 
+	// Send item age to client to prevent client desync when an item is e.g. dropped by a powered open crate
+	@SubscribeEvent
+	public static void onItemTrack(PlayerEvent.StartTracking evt) {
+		if(evt.getTarget() instanceof EntityItem) {
+			int entityId = evt.getTarget().getEntityId();
+			int age = ((EntityItem) evt.getTarget()).age;
+			PacketHandler.sendTo((EntityPlayerMP) evt.getEntityPlayer(), new PacketItemAge(entityId, age));
+		}
+	}
 }

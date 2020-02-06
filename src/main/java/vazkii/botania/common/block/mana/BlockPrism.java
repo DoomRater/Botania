@@ -87,7 +87,7 @@ public class BlockPrism extends BlockMod implements IManaTrigger, ILexiconable, 
 	@Nonnull
 	@Override
 	@SideOnly(Side.CLIENT)
-	public BlockRenderLayer getBlockLayer() {
+	public BlockRenderLayer getRenderLayer() {
 		return BlockRenderLayer.TRANSLUCENT;
 	}
 
@@ -122,13 +122,9 @@ public class BlockPrism extends BlockMod implements IManaTrigger, ILexiconable, 
 				player.setHeldItem(hand, ItemStack.EMPTY);
 
 			prism.getItemHandler().setStackInSlot(0, heldItem.copy());
-			prism.markDirty();
-			world.setBlockState(pos, state.withProperty(BotaniaStateProps.HAS_LENS, true), 1 | 2);
 		} else if(!lens.isEmpty()) {
 			ItemHandlerHelper.giveItemToPlayer(player, lens);
 			prism.getItemHandler().setStackInSlot(0, ItemStack.EMPTY);
-			prism.markDirty();
-			world.setBlockState(pos, state.withProperty(BotaniaStateProps.HAS_LENS, false), 1 | 2);
 		}
 
 		return true;
@@ -136,7 +132,7 @@ public class BlockPrism extends BlockMod implements IManaTrigger, ILexiconable, 
 
 	@Override
 	public void neighborChanged(IBlockState state, World world, BlockPos pos, Block block, BlockPos fromPos) {
-		boolean power = world.isBlockIndirectlyGettingPowered(pos) > 0 || world.isBlockIndirectlyGettingPowered(pos.up()) > 0;
+		boolean power = world.getRedstonePowerFromNeighbors(pos) > 0 || world.getRedstonePowerFromNeighbors(pos.up()) > 0;
 		boolean powered = state.getValue(BotaniaStateProps.POWERED);
 
 		if(!world.isRemote) {
@@ -170,7 +166,7 @@ public class BlockPrism extends BlockMod implements IManaTrigger, ILexiconable, 
 	@Override
 	public void onBurstCollision(IManaBurst burst, World world, BlockPos pos) {
 		TileEntity tile = world.getTileEntity(pos);
-		if(tile != null && tile instanceof TilePrism)
+		if(tile instanceof TilePrism)
 			((TilePrism) tile).onBurstCollision(burst);
 	}
 

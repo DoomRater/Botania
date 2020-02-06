@@ -54,8 +54,9 @@ public class SpellClothRecipe extends IForgeRegistryEntry.Impl<IRecipe> implemen
 		ItemStack stackToDisenchant = ItemStack.EMPTY;
 		for(int i = 0; i < var1.getSizeInventory(); i++) {
 			ItemStack stack = var1.getStackInSlot(i);
-			if(!stack.isEmpty() && stack.isItemEnchanted()) {
+			if(!stack.isEmpty() && stack.isItemEnchanted() && stack.getItem() != ModItems.spellCloth) {
 				stackToDisenchant = stack.copy();
+				stackToDisenchant.setCount(1);
 				break;
 			}
 		}
@@ -63,10 +64,7 @@ public class SpellClothRecipe extends IForgeRegistryEntry.Impl<IRecipe> implemen
 		if(stackToDisenchant.isEmpty())
 			return ItemStack.EMPTY;
 
-		NBTTagCompound cmp = stackToDisenchant.getTagCompound().copy();
-		cmp.removeTag("ench"); // Remove enchantments
-		stackToDisenchant.setTagCompound(cmp);
-
+		stackToDisenchant.getTagCompound().removeTag("ench"); // Remove enchantments
 		return stackToDisenchant;
 	}
 
