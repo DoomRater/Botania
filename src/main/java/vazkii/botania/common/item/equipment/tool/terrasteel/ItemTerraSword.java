@@ -84,7 +84,7 @@ public class ItemTerraSword extends ItemManasteelSword implements ILensEffect {
 	}
 
 	public EntityManaBurst getBurst(EntityPlayer player, ItemStack stack) {
-		EntityManaBurst burst = new EntityManaBurst(player, EnumHand.MAIN_HAND);
+		EntityManaBurst burst = new EntityManaBurst(player);
 
 		float motionModifier = 7F;
 
