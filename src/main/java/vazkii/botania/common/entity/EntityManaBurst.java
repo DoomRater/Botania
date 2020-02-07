@@ -140,7 +140,7 @@ public class EntityManaBurst extends EntityThrowable implements IManaBurst {
 		setMotion(mx, my, mz);
 	}
 
-	public EntityManaBurst(PlayerEntity player) {
+	public EntityManaBurst(EntityPlayer player) {
 		this(player.world);
 
 		setBurstSourceCoords(new BlockPos(0, -1, 0));
