@@ -187,7 +187,7 @@ public class ItemFlightTiara extends ItemBauble implements IManaUsingItem, IBaub
 			if(playersWithFlight.contains(playerStr(player))) {
 				if(shouldPlayerHaveFlight(player)) {
 					player.capabilities.allowFlying = true;
-					if(player.capabilities.isFlying) {
+					if(player.capabilities.isFlying && !player.isSpectator() && !player.isCreative()) {
 						if(!player.world.isRemote)
 							ManaItemHandler.requestManaExact(tiara, player, getCost(tiara, left), true);
 						else if(Math.abs(player.motionX) > 0.1 || Math.abs(player.motionZ) > 0.1) {
