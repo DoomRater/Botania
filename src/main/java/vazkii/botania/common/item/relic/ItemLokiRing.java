@@ -28,7 +28,9 @@ import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -41,6 +43,7 @@ import vazkii.botania.api.item.IWireframeCoordinateListProvider;
 import vazkii.botania.api.mana.IManaUsingItem;
 import vazkii.botania.api.mana.ManaItemHandler;
 import vazkii.botania.common.core.helper.ItemNBTHelper;
+import vazkii.botania.common.core.helper.PlayerHelper;
 import vazkii.botania.common.item.ModItems;
 import vazkii.botania.common.item.equipment.tool.ToolCommons;
 import vazkii.botania.common.lib.LibItemNames;
@@ -65,7 +68,7 @@ public class ItemLokiRing extends ItemRelicBauble implements IWireframeCoordinat
 
 	@SubscribeEvent
 	public static void onPlayerInteract(PlayerInteractEvent.RightClickBlock event) {
-		EntityPlayer player = event.getEntityPlayer();
+		EntityPlayer player = event.getPlayer();
 		ItemStack lokiRing = getLokiRing(player);
 		if(lokiRing.isEmpty() || !player.isSneaking())
 			return;
@@ -80,8 +83,7 @@ public class ItemLokiRing extends ItemRelicBauble implements IWireframeCoordinat
 			}
 		}
 
-		ItemStack heldItemStack = event.getItemStack();
-		BlockPos originCoords = getOriginPos(lokiRing);
+		ItemStack stack = event.getItemStack();
 		RayTraceResult lookPos = ToolCommons.raytraceFromEntity(player.world, player, true, 10F);
 		List<BlockPos> cursors = getCursorList(lokiRing);
 		int cost = Math.min(cursors.size(), (int) Math.pow(Math.E, cursors.size() * 0.25));
@@ -89,9 +91,11 @@ public class ItemLokiRing extends ItemRelicBauble implements IWireframeCoordinat
 		if(lookPos == null || lookPos.getBlockPos() == null)
 			return;
 
-		if(heldItemStack.isEmpty()) {
+		if(stack.isEmpty()) {
+			BlockPos originCoords = getOriginPos(lokiRing);
 			if(!event.getWorld().isRemote) {
 				if(originCoords.getY() == -1) {
+					// Initiate a new pending list of positions
 					setOriginPos(lokiRing, lookPos.getBlockPos());
 					setCursorList(lokiRing, null);
 					BotaniaAPI.internalHandler.sendBaubleUpdatePacket(player, slot);
@@ -100,17 +104,12 @@ public class ItemLokiRing extends ItemRelicBauble implements IWireframeCoordinat
 						setOriginPos(lokiRing, new BlockPos(0, -1, 0));
 						BotaniaAPI.internalHandler.sendBaubleUpdatePacket(player, slot);
 					} else {
-						addCursor : {
-							BlockPos relPos = lookPos.getBlockPos().add(new BlockPos(-originCoords.getX(), -originCoords.getY(), -originCoords.getZ()));
+						// Toggle offsets on or off from the pending list of positions
+						BlockPos relPos = hit.subtract(originCoords);
 
-							for(BlockPos cursor : cursors)
-								if(cursor.equals(relPos)) {
-									cursors.remove(cursor);
-									setCursorList(lokiRing, cursors);
-									BotaniaAPI.internalHandler.sendBaubleUpdatePacket(player, slot);
-									break addCursor;
-								}
-
+						if (cursors.remove(relPos)) {
+							setCursorList(lokiRing, cursors);
+						} else {
 							addCursor(lokiRing, relPos);
 							BotaniaAPI.internalHandler.sendBaubleUpdatePacket(player, slot);
 						}
@@ -122,13 +121,22 @@ public class ItemLokiRing extends ItemRelicBauble implements IWireframeCoordinat
 			event.setCancellationResult(EnumActionResult.SUCCESS);
 		} else {
 			for(BlockPos cursor : cursors) {
-				BlockPos pos = lookPos.getBlockPos().add(cursor);
-				Item item = heldItemStack.getItem();
-				if(player.world.isAirBlock(pos) && ManaItemHandler.requestManaExact(lokiRing, player, cost, true)) {
-					ItemStack saveHeld = heldItemStack.copy();
-					item.onItemUse(player, player.world, pos, event.getHand(), lookPos.sideHit, (float) lookPos.hitVec.x - pos.getX(), (float) lookPos.hitVec.y - pos.getY(), (float) lookPos.hitVec.z - pos.getZ());
-					if (player.isCreative())
-						player.setHeldItem(event.getHand(), saveHeld);
+				if(ManaItemHandler.requestManaExact(lokiRing, player, cost, false)) {
+					Vec3d lookHit = lookPos.getHitVec();
+					Vec3d newHitVec = new Vec3d(pos.getX() + MathHelper.frac(lookHit.getX()), pos.getY() + MathHelper.frac(lookHit.getY()), pos.getZ() + MathHelper.frac(lookHit.getZ()));
+					BlockRayTraceResult newHit = new BlockRayTraceResult(newHitVec, lookPos.getFace(), pos, false);
+					ItemUseContext ctx = new ItemUseContext(player, event.getHand(), newHit);
+
+					ActionResultType result;
+					if (player.isCreative()) {
+						result = PlayerHelper.substituteUse(ctx, original.copy());
+					} else {
+						result = stack.onItemUse(ctx);
+					}
+
+					if (result == ActionResultType.SUCCESS) {
+						ManaItemHandler.requestManaExact(lokiRing, player, cost, true);
+					}
 				}
 			}
 		}
