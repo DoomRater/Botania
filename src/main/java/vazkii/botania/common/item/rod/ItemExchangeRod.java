@@ -414,10 +414,4 @@ public class ItemExchangeRod extends ItemMod implements IManaUsingItem, IWirefra
 		}
 		return ImmutableList.of();
 	}
-
-	@Override
-	public BlockPos getSourceWireframe(EntityPlayer player, ItemStack stack) {
-		return null;
-	}
-
 }
