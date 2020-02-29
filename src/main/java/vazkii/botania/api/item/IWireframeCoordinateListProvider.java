@@ -36,7 +36,7 @@ public interface IWireframeCoordinateListProvider {
 	 * @return The position of a single wireframe to draw thicker than all the others.
 	 */
 	@Nullable
-	default BlockPos getSourceWireframe(PlayerEntity player, ItemStack stack) {
+	default BlockPos getSourceWireframe(EntityPlayer player, ItemStack stack) {
 		return null;
 	}
 }
