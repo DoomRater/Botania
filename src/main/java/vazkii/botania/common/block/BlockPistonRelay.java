@@ -26,6 +26,7 @@ import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagString;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.tileentity.PistonTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.SoundCategory;
@@ -108,8 +109,11 @@ public class BlockPistonRelay extends BlockMod implements IWandable, ILexiconabl
 		return coordsToCheck.get(key);
 	}
 
-	private Block getBlockAt(DimWithPos key) {
-		return getStateAt(key).getBlock();
+	private TileEntity getTeAt(GlobalPos key) {
+		MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+		if(server == null)
+			return null;
+		return server.getWorld(key.getDimension()).getTileEntity(key.getPos());
 	}
 
 	private IBlockState getStateAt(DimWithPos key) {
@@ -202,11 +206,11 @@ public class BlockPistonRelay extends BlockMod implements IWandable, ILexiconabl
 				if(checkedCoords.contains(s))
 					continue;
 
-				Block block = getBlockAt(s);
-				if(block == Blocks.PISTON_EXTENSION) {
+				BlockState state = getStateAt(s);
+				if(state.getBlock() == Blocks.MOVING_PISTON) {
 					IBlockState state = getStateAt(s);
 					boolean sticky = BlockPistonExtension.EnumPistonType.STICKY == state.getValue(BlockPistonMoving.TYPE);
-					EnumFacing dir = state.getValue(BlockPistonMoving.FACING);
+					EnumFacing dir = ((PistonTileEntity) getTeAt(s)).getMotionDirection();
 
 					MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
 
@@ -217,9 +221,9 @@ public class BlockPistonRelay extends BlockMod implements IWandable, ILexiconabl
 							int worldId = s.dim, x = s.blockPos.getX(), y = s.blockPos.getY(), z = s.blockPos.getZ();
 							BlockPos pos = s.blockPos;
 							World world = server.getWorld(worldId);
-							if(world.isAirBlock(pos.offset(dir)))
+							if(world.isAirBlock(pos.offset(dir))) {
 								world.setBlockState(pos.offset(dir), ModBlocks.pistonRelay.getDefaultState());
-							else if(!world.isRemote) {
+							} else {
 								ItemStack stack = new ItemStack(ModBlocks.pistonRelay);
 								world.spawnEntity(new EntityItem(world, x + dir.getXOffset(), y + dir.getYOffset(), z + dir.getZOffset(), stack));
 							}
