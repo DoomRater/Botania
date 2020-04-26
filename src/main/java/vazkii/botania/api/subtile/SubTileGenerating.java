@@ -56,7 +56,6 @@ public class SubTileGenerating extends SubTileEntity {
 
 	int sizeLastCheck = -1;
 	protected TileEntity linkedCollector = null;
-	public int knownMana = -1;
 	public int passiveDecayTicks;
 
 	BlockPos cachedCollectorCoordinates = null;
@@ -229,7 +228,6 @@ public class SubTileGenerating extends SubTileEntity {
 		if(!player.world.isRemote)
 			sync();
 
-		knownMana = mana;
 		SoundEvent evt = ForgeRegistries.SOUND_EVENTS.getValue(DING_SOUND_EVENT);
 		if(evt != null)
 			player.playSound(evt, 0.1F, 1F);
@@ -317,12 +315,15 @@ public class SubTileGenerating extends SubTileEntity {
 	public void renderHUD(Minecraft mc, ScaledResolution res) {
 		String name = I18n.format("tile.botania:flower." + getUnlocalizedName() + ".name");
 		int color = getColor();
-		BotaniaAPI.internalHandler.drawComplexManaHUD(color, knownMana, getMaxMana(), name, res, BotaniaAPI.internalHandler.getBindDisplayForFlowerType(this), isValidBinding());
+		BotaniaAPI.internalHandler.drawComplexManaHUD(color, getMana(), getMaxMana(), name, res, BotaniaAPI.internalHandler.getBindDisplayForFlowerType(this), isValidBinding());
 	}
 
 	@Override
 	public boolean isOvergrowthAffected() {
 		return !isPassiveFlower();
 	}
-
+	
+	public int getMana() {
+		return mana;
+	}
 }
