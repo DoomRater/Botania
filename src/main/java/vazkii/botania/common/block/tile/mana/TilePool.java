@@ -75,7 +75,6 @@ public class TilePool extends TileMod implements IManaPool, IKeyLocked, ISparkAt
 	public static final int MAX_MANA_DILLUTED = 10000;
 
 	private static final String TAG_MANA = "mana";
-	private static final String TAG_KNOWN_MANA = "knownMana";
 	private static final String TAG_OUTPUTTING = "outputting";
 	private static final String TAG_COLOR = "color";
 	private static final String TAG_MANA_CAP = "manaCap";
@@ -91,7 +90,6 @@ public class TilePool extends TileMod implements IManaPool, IKeyLocked, ISparkAt
 
 	public EnumDyeColor color = EnumDyeColor.WHITE;
 	int mana;
-	private int knownMana = -1;
 
 	public int manaCap = -1;
 	private int soundTicks = 0;
@@ -367,9 +365,6 @@ public class TilePool extends TileMod implements IManaPool, IKeyLocked, ISparkAt
 			inputKey = cmp.getString(TAG_INPUT_KEY);
 		if(cmp.hasKey(TAG_OUTPUT_KEY))
 			inputKey = cmp.getString(TAG_OUTPUT_KEY);
-
-		if(cmp.hasKey(TAG_KNOWN_MANA))
-			knownMana = cmp.getInteger(TAG_KNOWN_MANA);
 	}
 
 	public void onWanded(EntityPlayer player, ItemStack wand) {
@@ -381,15 +376,7 @@ public class TilePool extends TileMod implements IManaPool, IKeyLocked, ISparkAt
 			VanillaPacketDispatcher.dispatchTEToNearbyPlayers(world, pos);
 		}
 
-		if(!world.isRemote) {
-			NBTTagCompound nbttagcompound = new NBTTagCompound();
-			writePacketNBT(nbttagcompound);
-			nbttagcompound.setInteger(TAG_KNOWN_MANA, getCurrentMana());
-			if(player instanceof EntityPlayerMP)
-				((EntityPlayerMP) player).connection.sendPacket(new SPacketUpdateTileEntity(pos, -999, nbttagcompound));
-		}
-
-		world.playSound(null, player.posX, player.posY, player.posZ, ModSounds.ding, SoundCategory.PLAYERS, 0.11F, 1F);
+		world.playSound(null, player.posX, player.posY, player.posZ, ModSounds.ding, SoundCategory.PLAYERS, 0.11F, 1F);  //leaving sound in
 	}
 
 	@SideOnly(Side.CLIENT)
@@ -397,7 +384,7 @@ public class TilePool extends TileMod implements IManaPool, IKeyLocked, ISparkAt
 		ItemStack pool = new ItemStack(ModBlocks.pool, 1, world.getBlockState(getPos()).getValue(BotaniaStateProps.POOL_VARIANT).ordinal());
 		String name = I18n.format(pool.getTranslationKey().replaceAll("tile.", "tile." + LibResources.PREFIX_MOD) + ".name");
 		int color = 0x4444FF;
-		HUDHandler.drawSimpleManaHUD(color, knownMana, manaCap, name, res);
+		HUDHandler.drawSimpleManaHUD(color, getCurrentMana(), manaCap, name, res);
 
 		int x = res.getScaledWidth() / 2 - 11;
 		int y = res.getScaledHeight() / 2 + 30;
