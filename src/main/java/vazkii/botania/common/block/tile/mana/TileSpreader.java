@@ -82,7 +82,6 @@ public class TileSpreader extends TileSimpleInventory implements IManaCollector,
 	private static final String TAG_UUID_MOST = "uuidMost";
 	private static final String TAG_UUID_LEAST = "uuidLeast";
 	private static final String TAG_MANA = "mana";
-	private static final String TAG_KNOWN_MANA = "knownMana";
 	private static final String TAG_REQUEST_UPDATE = "requestUpdate";
 	private static final String TAG_ROTATION_X = "rotationX";
 	private static final String TAG_ROTATION_Y = "rotationY";
@@ -130,7 +129,6 @@ public class TileSpreader extends TileSimpleInventory implements IManaCollector,
 	UUID identity;
 
 	int mana;
-	int knownMana = -1;
 	public float rotationX, rotationY;
 	public int paddingColor = -1;
 
@@ -341,8 +339,6 @@ public class TileSpreader extends TileSimpleInventory implements IManaCollector,
 		mmForcedGravity = cmp.getFloat(TAG_FORCED_GRAVITY);
 		mmForcedVelocityMultiplier = cmp.getFloat(TAG_FORCED_VELOCITY_MULTIPLIER);
 
-		if(cmp.hasKey(TAG_KNOWN_MANA))
-			knownMana = cmp.getInteger(TAG_KNOWN_MANA);
 		if(cmp.hasKey(TAG_PADDING_COLOR))
 			paddingColor = cmp.getInteger(TAG_PADDING_COLOR);
 		if(cmp.hasKey(TAG_CAN_SHOOT_BURST))
@@ -384,14 +380,7 @@ public class TileSpreader extends TileSimpleInventory implements IManaCollector,
 			return;
 
 		if(!player.isSneaking()) {
-			if(!world.isRemote) {
-				NBTTagCompound nbttagcompound = new NBTTagCompound();
-				writePacketNBT(nbttagcompound);
-				nbttagcompound.setInteger(TAG_KNOWN_MANA, mana);
-				if(player instanceof EntityPlayerMP)
-					((EntityPlayerMP) player).connection.sendPacket(new SPacketUpdateTileEntity(pos, -999, nbttagcompound));
-			}
-			world.playSound(null, player.posX, player.posY, player.posZ, ModSounds.ding, SoundCategory.PLAYERS, 0.1F, 1);
+			VanillaPacketDispatcher.dispatchTEToNearbyPlayers(this);
 		} else {
 			RayTraceResult pos = raytraceFromEntity(world, player, true);
 			if(pos != null && pos.hitVec != null && !world.isRemote) {
@@ -575,7 +564,7 @@ public class TileSpreader extends TileSimpleInventory implements IManaCollector,
 	public void renderHUD(Minecraft mc, ScaledResolution res) {
 		String name = I18n.format(new ItemStack(ModBlocks.spreader, 1, world.getBlockState(getPos()).getValue(BotaniaStateProps.SPREADER_VARIANT).ordinal()).getTranslationKey().replaceAll("tile.", "tile." + LibResources.PREFIX_MOD) + ".name");
 		int color = isRedstone() ? 0xFF0000 : isDreamwood() ? 0xFF00AE :  0x00FF00;
-		HUDHandler.drawSimpleManaHUD(color, knownMana, getMaxMana(), name, res);
+		HUDHandler.drawSimpleManaHUD(color, getCurrentMana(), getMaxMana(), name, res);
 
 		ItemStack lens = itemHandler.getStackInSlot(0);
 		if(!lens.isEmpty()) {
