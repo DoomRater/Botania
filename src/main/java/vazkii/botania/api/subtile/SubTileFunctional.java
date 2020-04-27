@@ -48,7 +48,6 @@ public class SubTileFunctional extends SubTileEntity {
 
 	int sizeLastCheck = -1;
 	TileEntity linkedPool = null;
-	public int knownMana = -1;
 
 	BlockPos cachedPoolCoordinates = null;
 
@@ -126,6 +125,10 @@ public class SubTileFunctional extends SubTileEntity {
 	public void linkToForcefully(TileEntity pool) {
 		linkedPool = pool;
 	}
+	
+	public int getMana() {
+		return mana;
+	}	
 
 	public void addMana(int mana) {
 		this.mana = Math.min(getMaxMana(), this.mana + mana);
@@ -136,7 +139,6 @@ public class SubTileFunctional extends SubTileEntity {
 		if(player == null)
 			return false;
 
-		knownMana = mana;
 		SoundEvent evt = ForgeRegistries.SOUND_EVENTS.getValue(DING_SOUND_EVENT);
 		if(evt != null)
 			player.playSound(evt, 0.1F, 1F);
@@ -220,7 +222,7 @@ public class SubTileFunctional extends SubTileEntity {
 	public void renderHUD(Minecraft mc, ScaledResolution res) {
 		String name = I18n.format("tile.botania:flower." + getUnlocalizedName() + ".name");
 		int color = getColor();
-		BotaniaAPI.internalHandler.drawComplexManaHUD(color, knownMana, getMaxMana(), name, res, BotaniaAPI.internalHandler.getBindDisplayForFlowerType(this), isValidBinding());
+		BotaniaAPI.internalHandler.drawComplexManaHUD(color, getMana(), getMaxMana(), name, res, BotaniaAPI.internalHandler.getBindDisplayForFlowerType(this), isValidBinding());
 	}
 
 }
