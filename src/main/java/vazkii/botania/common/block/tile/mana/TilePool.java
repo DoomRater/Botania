@@ -375,8 +375,6 @@ public class TilePool extends TileMod implements IManaPool, IKeyLocked, ISparkAt
 			outputting = !outputting;
 			VanillaPacketDispatcher.dispatchTEToNearbyPlayers(world, pos);
 		}
-
-		world.playSound(null, player.posX, player.posY, player.posZ, ModSounds.ding, SoundCategory.PLAYERS, 0.11F, 1F);  //leaving sound in
 	}
 
 	@SideOnly(Side.CLIENT)
