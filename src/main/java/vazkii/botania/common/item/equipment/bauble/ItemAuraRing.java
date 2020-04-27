@@ -31,7 +31,7 @@ public class ItemAuraRing extends ItemBauble implements IManaGivingItem {
 	@Override
 	public void onWornTick(ItemStack stack, EntityLivingBase player) {
 		super.onWornTick(stack, player);
-		if(player instanceof EntityPlayer && player.ticksExisted % getDelay() == 0)
+		if(!player.world.isRemote && player instanceof EntityPlayer && player.ticksExisted % getDelay() == 0)
 			ManaItemHandler.dispatchManaExact(stack, (EntityPlayer) player, 1, true);
 	}
 
