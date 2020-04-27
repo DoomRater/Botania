@@ -380,6 +380,7 @@ public class TileSpreader extends TileSimpleInventory implements IManaCollector,
 			return;
 
 		if(!player.isSneaking()) {
+			world.playSound(null, player.posX, player.posY, player.posZ, ModSounds.ding, SoundCategory.PLAYERS, 0.1F, 1);
 			VanillaPacketDispatcher.dispatchTEToNearbyPlayers(this);
 		} else {
 			RayTraceResult pos = raytraceFromEntity(world, player, true);
